@@ -230,3 +230,11 @@ return out;
 Esto es importante porque queremos poder hacer:
 
 std::cout << bureaucrat << std::endl;
+
+/*se llama a e.what porq es asi por norma,
+ y lueago el programa a ver si nos pasams de numero 
+ para abajo o para arriba decide aq throw va*/
+
+ /*Crear un funcionario que tenga un nombre y un grado
+limitado entre 1 y 150, que pueda subir/bajar de grado
+y que lance excepciones cuando intente salirse de esos límites*/
