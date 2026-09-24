@@ -1,240 +1,310 @@
-El ejercicio consiste en crear una clase Bureaucrat con:
+# CPP05 — ex00
 
-name → constante, no puede cambiar.
-grade → entero entre 1 y 150.
-Constructor.
-Destructor.
-Constructor de copia.
-Operador de asignación.
-getName()
-getGrade()
-incrementGrade()
-decrementGrade()
-GradeTooHighException
-GradeTooLowException
-operator<<
+## 1. ¿Qué pide realmente el ejercicio?
 
-Y hay una cosa especialmente importante:
+En `ex00` tenemos que crear una clase llamada `Bureaucrat`.
 
-En este ejercicio empiezas a trabajar con excepciones de C++.
+La clase representa a un funcionario que tiene:
 
+```text
+nombre
+grado
+```
 
-2. Lo primero: entender el grade
-1   → máximo rango
-150 → mínimo rango
-grade 1
-incrementGrade()
-      ↓
-ERROR → GradeTooHighException
-grade 150
-decrementGrade()
-      ↓
-ERROR → GradeTooLowException
+El grado va del:
 
+```text
+1 → mejor grado
+150 → peor grado
+```
 
-3. Los atributos
-¿Por qué const en _name?
+El objetivo principal del ejercicio es practicar:
 
-Porque el enunciado dice:
+* Clases.
+* Excepciones.
+* Constructores.
+* Orthodox Canonical Form.
+* Sobrecarga de `operator<<`.
+* Control de límites.
 
-A constant name.
+---
 
-4. Una consecuencia importante del const
+# 2. Clase Bureaucrat
 
-Esto afecta al operator=.
+La clase tiene dos atributos privados:
 
-Tenemos que implementar Orthodox Canonical Form porque el ejercicio lo exige para la clase.
-
-Pero:
-
+```cpp
 const std::string _name;
+int _grade;
+```
 
-no se puede reasignar.
+`_name` es el nombre del funcionario.
 
-Por tanto, en:
-
-Bureaucrat &operator=(const Bureaucrat &other);
-
-solo podremos copiar:
-
-_grade = other._grade;
-
-pero no:
-
-_name = other._name; // ❌
-
-De hecho, el nombre queda asociado al objeto desde su construcción.
-
-
-5. Las excepciones
-
-Aquí está la parte nueva de CPP05.
-
-Dentro de Bureaucrat podemos tener:
-
-class GradeTooHighException : public std::exception
-{
-	public:
-		const char *what() const throw();
-};
-
-y:
-
-class GradeTooLowException : public std::exception
-{
-	public:
-		const char *what() const throw();
-};
-
-La idea es que sean excepciones que podamos lanzar:
-
-throw Bureaucrat::GradeTooHighException();
-
-y capturar:
-
-try
-{
-	// ...
-}
-catch (std::exception &e)
-{
-	std::cout << e.what() << std::endl;
-}
-¿Por qué heredan de std::exception?
-
-Porque el enunciado específicamente quiere que puedan capturarse mediante:
-
-catch (std::exception &e)
-
-Gracias a la herencia:
-
-std::exception
-      ↑
-      |
-GradeTooHighException
-
-y:
-
-std::exception
-      ↑
-      |
-GradeTooLowException
-
-6. ¿Qué debe hacer el constructor?
-
-Tenemos:
-
-Bureaucrat("Jon", grade);
-
-Hay tres posibilidades.
-
-Caso válido
-Bureaucrat a("Jon", 42);
-
-Perfectamente válido.
-
-Grade demasiado alto
-Bureaucrat a("Jon", 0);
-
-Debe lanzar:
-
-GradeTooHighException
-Grade demasiado bajo
-Bureaucrat a("Jon", 151);
-
-Debe lanzar:
-
-GradeTooLowException
-
-Por tanto, conceptualmente:
-
-grade < 1
-   ↓
-TooHigh
-
-1 <= grade <= 150
-   ↓
-OK
-
-grade > 150
-   ↓
-TooLow
-
-7. incrementGrade()
-
-Aquí hay que tener cuidado con el nombre.
-
-Incrementar el grado significa aumentar la categoría, por lo que numéricamente restamos 1:
-
-3 → 2
-
-Así que:
-
-_grade--;
-
-Pero antes tenemos que comprobar el límite.
-
-Si:
-
-_grade == 1
-
-no podemos hacer:
-
-_grade--;
-
-porque terminaríamos en 0.
-
-Debe lanzar:
-
-throw GradeTooHighException();
-8. decrementGrade()
-
-Al contrario:
-
-3 → 4
-
-Por tanto:
-
-_grade++;
-
-Pero si estamos en:
-
-150
-
-no podemos pasar a:
-
-151
-
-y debemos lanzar:
-
-GradeTooLowException
-
-9. operator<<
-
-El resultado tiene que ser exactamente:
-
-<name>, bureaucrat grade <grade>.
+`_grade` es su grado.
 
 Por ejemplo:
 
-Jon, bureaucrat grade 42.
+```cpp
+Bureaucrat bob("Bob", 50);
+```
 
-La firma será:
+Tenemos:
 
-std::ostream &operator<<(std::ostream &out, const Bureaucrat &bureaucrat);
+```text
+Nombre → Bob
+Grado  → 50
+```
 
-Y devolveremos:
+---
 
-return out;
+# 3. Los grados
 
-Esto es importante porque queremos poder hacer:
+Los grados válidos son:
 
-std::cout << bureaucrat << std::endl;
+```text
+1 - 150
+```
 
-/*se llama a e.what porq es asi por norma,
- y lueago el programa a ver si nos pasams de numero 
- para abajo o para arriba decide aq throw va*/
+Importante:
 
- /*Crear un funcionario que tenga un nombre y un grado
-limitado entre 1 y 150, que pueda subir/bajar de grado
-y que lance excepciones cuando intente salirse de esos límites*/
+```text
+1   = mejor
+150 = peor
+```
+
+Por tanto:
+
+```text
+Bob, grade 10
+```
+
+tiene un grado mejor que:
+
+```text
+Bob, grade 100
+```
+
+---
+
+# 4. Constructor
+
+El constructor recibe:
+
+```cpp
+Bureaucrat(const std::string &name, int grade);
+```
+
+Comprueba que el grado sea válido.
+
+Si:
+
+```text
+grade < 1
+```
+
+se lanza:
+
+```cpp
+GradeTooHighException
+```
+
+Si:
+
+```text
+grade > 150
+```
+
+se lanza:
+
+```cpp
+GradeTooLowException
+```
+
+---
+
+# 5. Excepciones
+
+Tenemos dos excepciones dentro de `Bureaucrat`.
+
+## GradeTooHighException
+
+Se produce cuando el grado es demasiado alto.
+
+Por ejemplo:
+
+```cpp
+Bureaucrat bob("Bob", 0);
+```
+
+No puede existir porque el mejor grado permitido es `1`.
+
+---
+
+## GradeTooLowException
+
+Se produce cuando el grado es demasiado bajo.
+
+Por ejemplo:
+
+```cpp
+Bureaucrat bob("Bob", 151);
+```
+
+No puede existir porque el peor grado permitido es `150`.
+
+---
+
+# 6. Subir de grado
+
+Tenemos:
+
+```cpp
+void incrementGrade();
+```
+
+Aquí ocurre algo importante:
+
+**subir de grado significa reducir el número.**
+
+Por ejemplo:
+
+```text
+50 → 49
+```
+
+Porque:
+
+```text
+49 es mejor que 50
+```
+
+Si estamos en:
+
+```text
+1
+```
+
+no podemos subir más.
+
+Entonces se lanza:
+
+```cpp
+GradeTooHighException
+```
+
+---
+
+# 7. Bajar de grado
+
+Tenemos:
+
+```cpp
+void decrementGrade();
+```
+
+Aquí aumentamos el número:
+
+```text
+50 → 51
+```
+
+Si estamos en:
+
+```text
+150
+```
+
+no podemos bajar más.
+
+Entonces se lanza:
+
+```cpp
+GradeTooLowException
+```
+
+---
+
+# 8. Orthodox Canonical Form
+
+La clase tiene:
+
+```cpp
+Bureaucrat();
+Bureaucrat(const Bureaucrat &other);
+Bureaucrat &operator=(const Bureaucrat &other);
+~Bureaucrat();
+```
+
+Es decir:
+
+1. Constructor por defecto.
+2. Constructor de copia.
+3. Operador de asignación.
+4. Destructor.
+
+---
+
+# 9. Getters
+
+Tenemos:
+
+```cpp
+const std::string &getName() const;
+int getGrade() const;
+```
+
+Sirven para consultar:
+
+```text
+nombre
+grado
+```
+
+sin modificar el objeto.
+
+---
+
+# 10. operator<<
+
+Podemos hacer:
+
+```cpp
+std::cout << bob;
+```
+
+Y obtenemos algo como:
+
+```text
+Bob, bureaucrat grade 50.
+```
+
+Esto se consigue sobrecargando:
+
+```cpp
+operator<<
+```
+
+---
+
+# 11. Resumen
+
+`Bureaucrat` representa un funcionario con:
+
+```text
+Nombre
+Grado
+```
+
+El grado siempre debe estar entre:
+
+```text
+1 y 150
+```
+
+Y tenemos que controlar correctamente los límites al crear el objeto y al subir/bajar de grado.
+
+---
+
+## Frase para memorizar
+
+> **Bureaucrat es una clase que representa un funcionario con un nombre y un grado entre 1 y 150, utilizando excepciones para controlar los límites del grado.**

@@ -1,291 +1,464 @@
-¿En qué consiste el ejercicio?
+# CPP05 — ex01
 
-En el ex00 creamos un Bureaucrat.
+## 1. ¿Qué añade este ejercicio?
 
-Un Bureaucrat tenía:
+En `ex00` solamente teníamos:
 
-Nombre
-Grado
+```text
+Bureaucrat
+```
 
-Por ejemplo:
+Ahora añadimos:
 
-Bob → grado 42
+```text
+Form
+```
 
-Y aprendimos que:
+La relación es:
 
-1   = grado MUY alto
-42  = grado medio
-100 = grado bajo
-150 = grado MUY bajo
+```text
+Bureaucrat
+     |
+     | puede firmar
+     v
+   Form
+```
 
-Ahora en ex01 vamos a darle un trabajo al Bureaucrat:
+El objetivo es practicar la relación entre clases y el uso de excepciones.
 
-Firmar formularios.
+---
 
-Para eso creamos una nueva clase llamada Form.
+# 2. Clase Form
 
-¿Qué es un Form?
+`Form` representa un formulario que tiene:
 
-Un formulario tendrá:
+```text
+nombre
+firmado / no firmado
+grado necesario para firmar
+grado necesario para ejecutar
+```
 
-Nombre
-¿Está firmado?
-Grado necesario para firmarlo
-Grado necesario para ejecutarlo
+Sus atributos son:
 
-Por ejemplo, imaginemos:
+```cpp
+const std::string _name;
+bool _signed;
+const int _gradeToSign;
+const int _gradeToExecute;
+```
 
-Form: "Contrato"
+---
 
-Ese formulario podría necesitar:
+# 3. Grados del formulario
 
-Grado 50 para firmarlo
-Grado 30 para ejecutarlo
+Al igual que en `Bureaucrat`:
 
-Y aquí está la parte importante.
+```text
+1   = mejor
+150 = peor
+```
 
-¿Qué significa 50 y 30?
+El formulario tiene dos grados diferentes:
 
-Cuando hacemos:
-
-Form form("Contrato", 50, 30);
-
-los parámetros son:
-
-"Contrato" → nombre del formulario
-
-50 → grado necesario para FIRMARLO
-
-30 → grado necesario para EJECUTARLO
-
-Es decir:
-
-                    CONTRATO
-                       │
-             ┌─────────┴─────────┐
-             │                   │
-       Para firmarlo       Para ejecutarlo
-          grado 50             grado 30
-¿Qué significa "grado necesario"?
-
-Recuerda que en este ejercicio:
-
-1 es mejor que 50, y 50 es mejor que 100.
-
-Por tanto, si un formulario necesita grado 50 para firmarlo:
-
-Bureaucrat grado 30
-30
-↓
-es mejor que 50
-
-✅ Puede firmarlo.
-
-Bureaucrat grado 50
-50
-↓
-exactamente el necesario
-
-✅ Puede firmarlo.
-
-Bureaucrat grado 70
-70
-↓
-es peor que 50
-
-❌ No puede firmarlo.
-
-Por eso la condición será:
-
-bureaucrat.getGrade() <= 50
-¿Y _gradeToSign?
-
-Cuando decimos:
-
-_gradeToSign
-
-simplemente estamos guardando:
-
-El grado máximo permitido para poder firmar ese formulario.
+```text
+gradeToSign
+gradeToExecute
+```
 
 Por ejemplo:
 
-_gradeToSign = 50
+```cpp
+Form contract("Contract", 50, 30);
+```
 
-significa:
+Significa:
 
-"Para firmarme necesitas tener grado 50 o mejor."
+```text
+50 → necesita grado 50 o mejor para firmar
+30 → necesita grado 30 o mejor para ejecutar
+```
+
+---
+
+# 4. Crear un formulario
+
+Ejemplo:
+
+```cpp
+Form contract("Contract", 50, 30);
+```
+
+Inicialmente:
+
+```text
+signed = no
+```
 
 Por tanto:
 
-1   → puede
-20  → puede
-49  → puede
-50  → puede
-51  → NO puede
-100 → NO puede
-150 → NO puede
-¿Y _gradeToExecute?
+```text
+Contract
+signed: no
+grade required to sign: 50
+grade required to execute: 30
+```
 
-Exactamente lo mismo, pero para ejecutar el formulario.
+---
 
-Si:
-
-_gradeToExecute = 30
-
-significa:
-
-"Para ejecutar este formulario necesitas tener grado 30 o mejor."
-
-Por ejemplo:
-
-Bureaucrat grado 10 → puede ejecutar
-Bureaucrat grado 25 → puede ejecutar
-Bureaucrat grado 30 → puede ejecutar
-Bureaucrat grado 31 → NO puede ejecutar
-Bureaucrat grado 80 → NO puede ejecutar
-Entonces, ¿por qué hay dos grados?
-
-Porque firmar y ejecutar son cosas diferentes.
-
-Por ejemplo:
-
-Form form("Contrato", 50, 30);
-
-significa:
-
-Contrato
-
-Para FIRMAR:
-→ necesitas grado 50 o mejor
-
-Para EJECUTAR:
-→ necesitas grado 30 o mejor
-
-Así puede ocurrir:
-
-Bob → grado 40
-
-Bob:
-
-¿Puede firmarlo?
-40 <= 50 → SÍ ✅
-
-¿Puede ejecutarlo?
-40 <= 30 → NO ❌
-
-Es decir, Bob puede firmarlo pero no ejecutarlo.
-
-Otro:
-
-Alice → grado 20
-
-Alice:
-
-¿Puede firmarlo?
-20 <= 50 → SÍ ✅
-
-¿Puede ejecutarlo?
-20 <= 30 → SÍ ✅
-¿Qué pasa cuando creamos el Form?
-
-Al crearlo:
-
-Form form("Contrato", 50, 30);
-
-tenemos:
-
-Nombre:             Contrato
-Firmado:            false
-Grado para firmar:  50
-Grado para ejecutar:30
-
-El formulario empieza siempre sin firmar.
-
-_signed = false
-
-Luego un Bureaucrat puede intentar firmarlo.
-
-¿Qué hace beSigned()?
+# 5. Firmar un formulario
 
 Tenemos:
 
-form.beSigned(bob);
+```cpp
+void beSigned(const Bureaucrat &bureaucrat);
+```
 
-Esto significa:
+Esta función comprueba si el Bureaucrat tiene suficiente grado.
 
-"Haz que este formulario sea firmado por Bob."
+Por ejemplo:
 
-El formulario mira el grado de Bob.
+```text
+Form necesita 50
+Bureaucrat tiene 40
+```
 
-Si puede firmarlo:
+Como:
 
-_signed = true
+```text
+40 es mejor que 50
+```
 
-Si no puede:
+puede firmarlo.
 
-throw Form::GradeTooLowException
-¿Y qué añade signForm()?
+Resultado:
 
-En ex00 teníamos:
+```text
+signed = yes
+```
 
-Bureaucrat bob("Bob", 40);
+---
 
-Ahora podremos hacer:
+# 6. Cuando no puede firmar
 
-bob.signForm(form);
+Por ejemplo:
 
-Y Bob intentará firmar el formulario.
+```text
+Form necesita 50
+Bureaucrat tiene 60
+```
+
+Como:
+
+```text
+60 es peor que 50
+```
+
+no puede firmarlo.
+
+Se lanza:
+
+```cpp
+GradeTooLowException
+```
+
+---
+
+# 7. Bureaucrat::signForm()
+
+Añadimos a `Bureaucrat`:
+
+```cpp
+void signForm(Form &form);
+```
+
+Esto permite hacer:
+
+```cpp
+bob.signForm(contract);
+```
+
+Internamente intenta:
+
+```cpp
+form.beSigned(*this);
+```
 
 Si puede:
 
-Bob signed Contrato
+```text
+Bob signed Contract
+```
 
 Si no puede:
 
-Bob couldn't sign Contrato because ...
-En resumen, la película completa es esta
+```text
+Bob couldn't sign Contract because Form grade is too low!
+```
+
+El `try/catch` está dentro de `signForm()` para que el programa pueda mostrar el error sin terminar.
+
+---
+
+# 8. ¿Qué significa `*this`?
+
+Dentro de:
+
+```cpp
+Bureaucrat::signForm()
+```
+
+`this` representa al objeto actual.
+
+Por tanto:
+
+```cpp
+*this
+```
+
+significa:
+
+> el propio Bureaucrat que está ejecutando `signForm()`.
+
+Por ejemplo:
+
+```cpp
+bob.signForm(form);
+```
+
+hace conceptualmente:
+
+```cpp
+form.beSigned(bob);
+```
+
+---
+
+# 9. Orthodox Canonical Form
+
+Tanto `Bureaucrat` como `Form` siguen la Orthodox Canonical Form.
 
 Tenemos:
 
-                 BUREAUCRAT
-                     │
-                tiene un grado
-                     │
-                     ▼
-                   FORM
-                     │
-          ┌──────────┴──────────┐
-          │                     │
-     grado para firmar     grado para ejecutar
-          │
-          ▼
-   ¿Bureaucrat tiene
-    grado suficiente?
-       /          \
-     SÍ            NO
-     │              │
-     ▼              ▼
- firmado        excepción
+```cpp
+Constructor por defecto
+Constructor de copia
+Operador de asignación
+Destructor
+```
 
-Y eso es todo el ejercicio.
+---
 
-Lo que cambia respecto a ex00:
+# 10. Atributos const
 
-Ex00:
+Tenemos:
 
-Crear Bureaucrat, controlar sus grados y lanzar excepciones.
+```cpp
+const std::string _name;
+const int _gradeToSign;
+const int _gradeToExecute;
+```
 
-Ex01:
+Estos valores no pueden cambiar después de crear el objeto.
 
-Crear Form, controlar los grados que necesita y permitir que un Bureaucrat intente firmarlo.
+Por eso el operador de asignación solamente puede modificar:
 
-Y una cosa importante: en este ejercicio todavía no vamos a implementar que el Bureaucrat ejecute el formulario. El gradeToExecute simplemente forma parte de los datos del Form porque el enunciado lo pide; se utilizará más adelante en los siguientes ejercicios.
+```cpp
+_signed
+```
 
-/*En una sola frase
+Por ejemplo:
 
-Crear una clase Form que tenga un nombre, un estado de firmado
- y dos grados necesarios (uno para firmarlo y otro para ejecutarlo), 
- y hacer que los Bureaucrat puedan intentar firmarlo respetando las 
- reglas de grados y excepciones.
-*/
+```cpp
+Form &Form::operator=(const Form &other)
+{
+	if (this != &other)
+		_signed = other._signed;
+	return (*this);
+}
+```
+
+---
+
+# 11. Sobrecarga de operator<<
+
+Podemos hacer:
+
+```cpp
+std::cout << form;
+```
+
+Y obtener:
+
+```text
+Contract, signed: yes, grade required to sign: 50, grade required to execute: 30
+```
+
+---
+
+# 12. Excepciones de Form
+
+`Form` tiene:
+
+```cpp
+GradeTooHighException
+GradeTooLowException
+```
+
+Se utilizan al crear un formulario con grados fuera de:
+
+```text
+1 - 150
+```
+
+Por ejemplo:
+
+```cpp
+Form form("Test", 0, 30);
+```
+
+produce:
+
+```text
+Form grade is too high!
+```
+
+Y:
+
+```cpp
+Form form("Test", 50, 151);
+```
+
+produce:
+
+```text
+Form grade is too low!
+```
+
+---
+
+# 13. Lo que hay que entender
+
+La idea principal de `ex01` es:
+
+```text
+                Bureaucrat
+                    |
+                    | signForm()
+                    v
+                   Form
+                    |
+                    | beSigned()
+                    v
+             ¿grado suficiente?
+                /        \
+              NO          SÍ
+              |            |
+           excepción     firmado
+```
+
+El `Bureaucrat` intenta firmar el formulario.
+
+El propio `Form` comprueba si el grado es suficiente.
+
+---
+
+# 14. Ejemplo completo
+
+Tenemos:
+
+```cpp
+Bureaucrat bob("Bob", 40);
+Form contract("Contract", 50, 30);
+```
+
+Bob tiene grado:
+
+```text
+40
+```
+
+El formulario necesita:
+
+```text
+50 para firmar
+```
+
+Como:
+
+```text
+40 < 50
+```
+
+Bob puede firmarlo.
+
+Hacemos:
+
+```cpp
+bob.signForm(contract);
+```
+
+Resultado:
+
+```text
+Bob signed Contract
+```
+
+El formulario pasa de:
+
+```text
+signed: no
+```
+
+a:
+
+```text
+signed: yes
+```
+
+---
+
+# 15. Diferencia importante entre firmar y ejecutar
+
+En `ex01` el formulario **ya tiene**:
+
+```cpp
+_gradeToExecute
+```
+
+pero todavía no tenemos una función para ejecutarlo.
+
+Es decir:
+
+```text
+ex01
+   |
+   ├── puede comprobar quién puede firmar
+   |
+   └── guarda quién debería poder ejecutar
+```
+
+La ejecución real llegará en:
+
+```text
+ex02
+```
+
+donde `Form` se convierte en:
+
+```text
+AForm
+```
+
+y aparecen:
+
+```cpp
+execute()
+executeForm()
+```
+
+---
+
+## Frase para memorizar
+
+> **Form representa un documento que puede estar firmado y que tiene un grado mínimo necesario para firmarlo y otro para ejecutarlo. Bureaucrat puede intentar firmarlo mediante `signForm()`.**
